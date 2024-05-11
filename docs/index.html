@@ -6,14 +6,19 @@
     <meta charset="UTF-8" name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
     <meta property="og:title" content="投稿マップ" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://code4nagoya.github.io/postmap/images/ogp.png" />
+
     <meta name="description" content="防災に関して、地域で気がついたことを投稿していくマップです。" />
+
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="投稿マップ" />
     <meta name="twitter:image" content="https://code4nagoya.github.io/postmap/images/ogp.png" />
+
     <meta name="author" content="Code for Nagoya">
+
     <meta name="keywords" content="防災,マップ,投稿" />
 
     <!-- leaflet -->
@@ -24,7 +29,33 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-hash/0.2.1/leaflet-hash.min.js"
         integrity="sha512-0A4MbfuZq5Au9EdpI1S5rUTXlibNBi8CuZ/X3ycwXyZiCjNzpiO9YH6EMqPgzZm6vfNCuZStBQHjnO17nIC0IQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.EasyButton/2.4.0/easy-button.min.js"
+        integrity="sha512-Tndo4y/YJooD/mGXS9D6F1YyBcSyrWnnSWQ5Z9IcKt6bljicjyka9qcP99qMFbQ5+omfOtwwIapv1DjBCZcTJQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.EasyButton/2.4.0/easy-button.css"
+        integrity="sha512-aiVWmB2G8oV+XfHo1CR6hEAxzCl48Lrl3UBzQ6P+BEMkT8qY1tGecdQx6x/X8i9cCVrwQU9ipsOsZlNkRh9n7w=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
 
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"
+        integrity="sha512-GWzVrcGlo0TxTRvz9ttioyYJ+Wwk9Ck0G81D+eO63BaqHaJ3YZX9wuqjwgfcV/MrB2PhaVX9DkYVhbFpStnqpQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <link rel="manifest" href="./manifest.json">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./service-worker.js').then(function () {
+                console.log('Service Worker Registered');
+            });
+        }
+    </script>
+
+
+    <!-- tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
@@ -48,6 +79,13 @@
 
         }
 
+		#cross {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+            transform: translate(-50%, -50%);
+			z-index: 10;
+		}
 
         #text1 {
             width: 200px;
@@ -71,7 +109,16 @@
 
         onload = async () => {
 
-            const map = L.map('map').setView([35.1845, 136.8941], 11);
+            //const map = L.map('map').setView([35.1845, 136.8941], 11);
+
+			const map = L.map('map', {
+				center: [35.1845, 136.8941],
+				zoomControl: false,
+				zoom: 12
+			});
+
+			/* コントロールボタン */
+			L.control.zoom( { position: 'topright' } ).addTo( map );
 
             const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
@@ -93,6 +140,31 @@
 
             });
 
+            /* GPSボタン */
+            let ido;
+            let keido;
+            let gps_get = (position) => {
+                ido = position.coords.latitude;
+                keido = position.coords.longitude;
+                map.setView([ido, keido], 16);
+
+            }
+
+            let gps_error = (error) => {
+                alert("エラーが発生したので、現在地を取得できませんでした。");
+            }
+
+            let GPS = () => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(gps_get, gps_error);
+                } else {
+                    alert("エラーが発生したので、現在地を取得できませんでした。");
+                }
+            }
+
+            let gps_button = L.easyButton('fa-location-arrow', function () { GPS(); }, { position: 'topright' }).addTo(map);
+
+
         }
 
 
@@ -102,8 +174,15 @@
 
 <body>
 
-    <div class="input">
-        <input id="text1" type="text" onfocus="this.select();"> <a href=""><div id="exp" class="search_btn p-3">投　稿</div></a>
+	<!-- cross_key -->
+	<div id ="cross">
+		<img id ="img_cross" src="./images/cross.gif">
+	</div>
+
+    <div class="input text-center">
+        <input id="text1" type="text" onfocus="this.select();"> <a href="">
+            <div id="exp" class="search_btn p-3">投　稿</div>
+        </a>
     </div>
 
     <div id='map'></div>
